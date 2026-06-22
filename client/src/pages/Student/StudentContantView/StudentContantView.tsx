@@ -23,12 +23,12 @@ export default function StudentContentView() {
     }, [id]);
     console.log(content);
 
-    return ( content?.type === 'פיצות' ? (
+    return ( content?.type === 'summary' ? (
         <Summary />
-    ) : content?.type === 'quiz' ? (
+    ) : content?.type === 'multiple_choices' ? (
         <Quiz/>
     ) : (
-        <Summary />
+        <>Content not found</>
     ));
    
 }

@@ -15,7 +15,7 @@ const AppRouter = () => {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<div>Home</div>} />
+                <Route path="/" element={<LoginPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/student" element={<Student />} />
@@ -30,7 +30,7 @@ const AppRouter = () => {
                     path="/teacher/contents/:id"
                     element={<TeacherContentView />}
                 />
-                <Route path="/teacher/Quiz/:id" element={<Quiz />} />
+                <Route path="/teacher/quiz/:id" element={<Quiz />} />
                 <Route
                     path="/teacher/createContent"
                     element={<TeacherCreateContent />}
