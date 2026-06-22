@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { AppService } from './app.service';
+import type { CreateContentPayload } from './aiClient';
 
 @Controller('api')
 export class AppController {
@@ -26,6 +27,11 @@ export class AppController {
   @Get('materials/:id')
   getMaterialById(@Param('id') id: string) {
     return this.appService.getMaterialById(id);
+  }
+
+  @Post('materials')
+  createMaterial(@Body() body: CreateContentPayload) {
+    return this.appService.createMaterial(body);
   }
 
   @Post('students')
