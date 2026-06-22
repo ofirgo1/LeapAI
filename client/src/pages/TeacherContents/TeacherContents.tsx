@@ -117,7 +117,7 @@ export default function TeacherContents() {
                                         fullWidth
                                         onClick={() =>
                                             navigate(
-                                                `/teacher/contents/${item.id}`,
+                                                `/teacher/${item.type === 'multiple_choice' ? 'quiz' : 'contents'}/${item.id}`,
                                             )
                                         }
                                     >
