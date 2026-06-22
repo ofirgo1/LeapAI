@@ -228,28 +228,6 @@ export default function TeacherCreateContent() {
                                 {...form.getInputProps('file')}
                             />
 
-                            <Stack gap="sm">
-                                <Checkbox
-                                    label="לאשר פרסום באתר עבור התלמידים"
-                                    {...form.getInputProps(
-                                        'publishToStudents',
-                                        {
-                                            type: 'checkbox',
-                                        },
-                                    )}
-                                />
-
-                                <Checkbox
-                                    label="ליצור שיעור ולשמור להצגה פנים אל פנים"
-                                    {...form.getInputProps(
-                                        'saveForPresentation',
-                                        {
-                                            type: 'checkbox',
-                                        },
-                                    )}
-                                />
-                            </Stack>
-
                             <Group justify="space-between" mt="md">
                                 <Button
                                     type="button"
