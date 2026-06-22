@@ -1,30 +1,14 @@
 import {
+  BadGatewayException,
   BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { db } from './db';
-import { generateMockOutput } from './mockAi';
+import { CreateContentPayload, generateQuizFromAi } from './aiClient';
 
 type StudentLevel = 'easy' | 'medium' | 'hard' | 'placement';
-
-type AiQuestion = {
-  question: string;
-  image?: string;
-  wrong_answers: string[];
-  correct_answer: string;
-};
-
-type MaterialContent = AiQuestion[];
-
-type GeneratedMaterial = {
-  subject: string;
-  title: string;
-  grade: string | null;
-  difficulty: number | string;
-  content: MaterialContent;
-};
 
 @Injectable()
 export class AppService {
@@ -68,6 +52,84 @@ export class AppService {
 
     return {
       material: result.rows[0],
+    };
+  }
+
+  async createMaterial(body: CreateContentPayload) {
+    if (
+      !body.type ||
+      !body.title ||
+      !body.grade ||
+      !body.content ||
+      !body.content.subject ||
+      !body.content.difficulty ||
+      !body.content.prompt
+    ) {
+      throw new BadRequestException(
+        'type, title, grade, content.subject, content.difficulty and content.prompt are required',
+      );
+    }
+
+    let aiResult;
+
+    try {
+      aiResult = await generateQuizFromAi(body);
+    } catch (error) {
+      throw new BadGatewayException(
+        error instanceof Error ? error.message : 'AI service failed',
+      );
+    }
+
+    const materialResult = await db.query(
+      `
+      INSERT INTO materials
+      (subject, title, grade, difficulty, content, prompt, file_name)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+      `,
+      [
+        aiResult.subject,
+        aiResult.title,
+        body.grade,
+        String(aiResult.difficulty),
+        JSON.stringify(aiResult.content),
+        body.content.prompt,
+        body.content.fileName || null,
+      ],
+    );
+
+    const material = materialResult.rows[0];
+
+    const shareCode = this.createShareCode();
+
+    const outputResult = await db.query(
+      `
+      INSERT INTO outputs
+      (material_id, type, title, content_json, share_code, teacher_email, target_student_email)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+      `,
+      [
+        material.id,
+        body.type,
+        aiResult.title,
+        JSON.stringify({
+          materialId: material.id,
+        }),
+        shareCode,
+        body.teacherEmail || null,
+        null,
+      ],
+    );
+
+    const output = outputResult.rows[0];
+
+    return {
+      material,
+      outputId: output.id,
+      materialId: material.id,
+      shareCode: output.share_code,
+      title: output.title,
     };
   }
 
@@ -201,101 +263,18 @@ export class AppService {
     type: string;
     content: string;
   }) {
-    const {
-      teacherEmail,
-      studentEmail,
-      subject,
-      grade,
-      difficulty,
-      type,
-      content,
-    } = body;
-
-    if (!subject || !grade || !type || !content) {
-      throw new BadRequestException(
-        'subject, grade, type and content are required',
-      );
-    }
-
-    const studentProfile = await this.getStudentProfile(studentEmail);
-
-    /*
-      כאן בהמשך נחליף את generateMockOutput בפונקציית AI האמיתית.
-      אבל המבנה הסופי שאנחנו שומרים ב-materials כבר מתאים ל-AI החדש:
-      materials.content = [
-        {
-          question,
-          image,
-          wrong_answers,
-          correct_answer
-        }
-      ]
-    */
-    const generatedMaterial = this.normalizeGeneratedMaterial(
-      generateMockOutput({
-        subject,
-        grade,
-        type,
-        content,
-        studentProfile,
-      }),
-      {
-        subject,
-        grade,
-        difficulty: difficulty || studentProfile.level,
+    return this.createMaterial({
+      type: body.type,
+      title: `${body.subject} - ${body.type}`,
+      teacherEmail: body.teacherEmail || null,
+      grade: body.grade,
+      content: {
+        subject: body.subject,
+        difficulty: body.difficulty || '5',
+        prompt: body.content,
+        fileName: null,
       },
-    );
-
-    const materialResult = await db.query(
-      `
-      INSERT INTO materials
-      (subject, title, grade, difficulty, content)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *
-      `,
-      [
-        generatedMaterial.subject,
-        generatedMaterial.title,
-        generatedMaterial.grade,
-        String(generatedMaterial.difficulty),
-        JSON.stringify(generatedMaterial.content),
-      ],
-    );
-
-    const material = materialResult.rows[0];
-
-    const shareCode = this.createShareCode();
-
-    const outputResult = await db.query(
-      `
-      INSERT INTO outputs
-      (material_id, type, title, content_json, share_code, teacher_email, target_student_email)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *
-      `,
-      [
-        material.id,
-        type,
-        generatedMaterial.title,
-        JSON.stringify({
-          materialId: material.id,
-        }),
-        shareCode,
-        teacherEmail || null,
-        studentEmail || null,
-      ],
-    );
-
-    const output = outputResult.rows[0];
-
-    return {
-      outputId: output.id,
-      materialId: material.id,
-      shareCode: output.share_code,
-      title: output.title,
-      material,
-      studentProfile,
-    };
+    });
   }
 
   async getOutputByShareCode(shareCode: string) {
@@ -313,6 +292,8 @@ export class AppService {
         materials.grade,
         materials.difficulty,
         materials.content,
+        materials.prompt,
+        materials.file_name,
         materials.created_at
       FROM outputs
       JOIN materials ON materials.id = outputs.material_id
@@ -342,6 +323,8 @@ export class AppService {
         grade: row.grade,
         difficulty: row.difficulty,
         content: row.content,
+        prompt: row.prompt,
+        fileName: row.file_name,
         created_at: row.created_at,
       },
     };
@@ -419,89 +402,6 @@ export class AppService {
     };
   }
 
-  private normalizeGeneratedMaterial(
-    rawOutput: any,
-    fallback: {
-      subject: string;
-      grade: string;
-      difficulty: string;
-    },
-  ): GeneratedMaterial {
-    /*
-      אם זה כבר המבנה שה-AI האמיתי מחזיר:
-      {
-        subject,
-        title,
-        grade,
-        difficulty,
-        content: [
-          {
-            question,
-            image,
-            wrong_answers,
-            correct_answer
-          }
-        ]
-      }
-    */
-    if (
-      rawOutput &&
-      rawOutput.subject &&
-      rawOutput.title &&
-      Array.isArray(rawOutput.content)
-    ) {
-      return {
-        subject: rawOutput.subject,
-        title: rawOutput.title,
-        grade: rawOutput.grade === 'NULL' ? null : rawOutput.grade,
-        difficulty: rawOutput.difficulty,
-        content: rawOutput.content,
-      };
-    }
-
-    /*
-      אם כרגע עדיין משתמשים ב-mockAi הישן:
-      {
-        title,
-        summary,
-        questions: [
-          {
-            question,
-            options,
-            correctAnswer,
-            explanation
-          }
-        ]
-      }
-
-      נמיר אותו למבנה החדש של materials.content.
-    */
-    if (rawOutput && rawOutput.title && Array.isArray(rawOutput.questions)) {
-      return {
-        subject: fallback.subject,
-        title: rawOutput.title,
-        grade: fallback.grade,
-        difficulty: fallback.difficulty,
-        content: rawOutput.questions.map((question: any) => {
-          const wrongAnswers = Array.isArray(question.options)
-            ? question.options.filter(
-                (option: string) => option !== question.correctAnswer,
-              )
-            : [];
-
-          return {
-            question: question.question,
-            image: '',
-            wrong_answers: wrongAnswers,
-            correct_answer: question.correctAnswer,
-          };
-        }),
-      };
-    }
-
-    throw new Error('AI output format is not supported');
-  }
-
   private async ensureEmailIsAvailable(email: string) {
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -527,68 +427,5 @@ export class AppService {
 
   private createPublicId() {
     return Math.random().toString(36).substring(2, 10).toUpperCase();
-  }
-
-  private async getStudentProfile(studentEmail?: string) {
-    if (!studentEmail) {
-      return {
-        level: 'placement' as const,
-        averageScore: null,
-      };
-    }
-
-    const normalizedEmail = studentEmail.trim().toLowerCase();
-
-    const studentResult = await db.query(
-      `
-      SELECT current_level
-      FROM students
-      WHERE email = $1
-      LIMIT 1
-      `,
-      [normalizedEmail],
-    );
-
-    if (studentResult.rows.length === 0) {
-      return {
-        level: 'placement' as const,
-        averageScore: null,
-      };
-    }
-
-    const results = await db.query(
-      `
-      SELECT score
-      FROM student_results
-      WHERE student_email = $1
-      ORDER BY created_at DESC
-      LIMIT 5
-      `,
-      [normalizedEmail],
-    );
-
-    if (results.rows.length === 0) {
-      return {
-        level: studentResult.rows[0].current_level || 'placement',
-        averageScore: null,
-      };
-    }
-
-    const scores = results.rows.map((row) => Number(row.score));
-    const averageScore =
-      scores.reduce((sum, score) => sum + score, 0) / scores.length;
-
-    let level: 'easy' | 'medium' | 'hard' = 'medium';
-
-    if (averageScore < 50) {
-      level = 'easy';
-    } else if (averageScore > 80) {
-      level = 'hard';
-    }
-
-    return {
-      level,
-      averageScore,
-    };
   }
 }
