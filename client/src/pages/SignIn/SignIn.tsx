@@ -16,9 +16,10 @@ const SignIn = () => {
     const form = useForm({
         initialValues: {
             fullName: '',
+            phoneNumber: '',
             email: '',
+            id: '',
             password: '',
-            confirmPassword: '',
         },
 
         validate: {
@@ -31,8 +32,13 @@ const SignIn = () => {
             password: (value) =>
                 value.length < 6 ? 'סיסמה חייבת להכיל לפחות 6 תווים' : null,
 
-            confirmPassword: (value, values) =>
-                value !== values.password ? 'הסיסמאות לא תואמות' : null,
+            phoneNumber: (value) =>
+                /^0\d{8,9}$/.test(value.replace(/-/g, ''))
+                    ? null
+                    : 'מספר טלפון לא תקין',
+
+            id: (value) =>
+                /^\d{9}$/.test(value) ? null : 'תעודת זהות חייבת להכיל 9 ספרות',
         },
     });
 
@@ -116,6 +122,24 @@ const SignIn = () => {
                                     {...form.getInputProps('email')}
                                 />
 
+                                <TextInput
+                                    label="מספר טלפון"
+                                    placeholder="0542285577"
+                                    size="md"
+                                    radius="md"
+                                    withAsterisk
+                                    {...form.getInputProps('phoneNumber')}
+                                />
+
+                                <TextInput
+                                    label="תעודת זהות"
+                                    placeholder="209952308"
+                                    size="md"
+                                    radius="md"
+                                    withAsterisk
+                                    {...form.getInputProps('id')}
+                                />
+
                                 <PasswordInput
                                     label="סיסמה"
                                     placeholder="בחר סיסמה"
@@ -123,15 +147,6 @@ const SignIn = () => {
                                     radius="md"
                                     withAsterisk
                                     {...form.getInputProps('password')}
-                                />
-
-                                <PasswordInput
-                                    label="אימות סיסמה"
-                                    placeholder="הקלד שוב את הסיסמה"
-                                    size="md"
-                                    radius="md"
-                                    withAsterisk
-                                    {...form.getInputProps('confirmPassword')}
                                 />
 
                                 <Button
