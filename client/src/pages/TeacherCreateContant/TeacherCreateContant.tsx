@@ -17,6 +17,8 @@ import {
 import { useForm } from '@mantine/form';
 import { useNavigate } from 'react-router-dom';
 
+import { createContent } from '../../api/contantApi';
+
 export default function TeacherCreateContent() {
     const navigate = useNavigate();
 
@@ -27,22 +29,44 @@ export default function TeacherCreateContent() {
             grade: '',
             difficulty: '',
             prompt: '',
-            publishToStudents: false,
-            saveForPresentation: false,
             file: null as File | null,
         },
 
         validate: {
-            title: (value) =>
+            title: (value: string) =>
                 value.trim().length < 2 ? 'יש להזין כותרת / נושא לימודי' : null,
-            outputType: (value) => (value ? null : 'יש לבחור סוג תוצר'),
-            grade: (value) => (value ? null : 'יש לבחור כיתה / רמת למידה'),
-            difficulty: (value) => (value ? null : 'יש לבחור רמת קושי'),
+
+            outputType: (value: string) => (value ? null : 'יש לבחור סוג תוצר'),
+
+            grade: (value: string) =>
+                value ? null : 'יש לבחור כיתה / רמת למידה',
+
+            difficulty: (value: string) => (value ? null : 'יש לבחור רמת קושי'),
         },
     });
 
-    const handleSubmit = form.onSubmit((values) => {
-        console.log(values);
+    const handleSubmit = form.onSubmit(async (values) => {
+        try {
+            const payload = {
+                type: values.outputType,
+                title: values.title,
+                grade: values.grade,
+                content: {
+                    subject: values.title,
+                    difficulty: values.difficulty,
+                    prompt: values.prompt,
+                    fileName: values.file?.name ?? null,
+                },
+            };
+
+            console.log('payload to backend:', payload);
+
+            await createContent(payload);
+
+            navigate('/teacher/contents');
+        } catch (error) {
+            console.error('Error creating content:', error);
+        }
     });
 
     return (
