@@ -83,8 +83,8 @@ export class AppService {
     const materialResult = await db.query(
       `
       INSERT INTO materials
-      (subject, title, grade, difficulty, content, prompt, file_name)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      (subject, title, grade, difficulty, content, prompt, file_name, type)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
       `,
       [
@@ -95,6 +95,7 @@ export class AppService {
         JSON.stringify(aiResult.content),
         body.content.prompt,
         body.content.fileName || null,
+        body.type,
       ],
     );
 
