@@ -83,6 +83,52 @@ export class AppService {
     };
   }
 
+  async login(body: {
+    email: string;
+    password: string;
+    type: 'teacher' | 'student';
+  }) {
+    const { email, password, type } = body;
+
+    if (!email || !password || !type) {
+      throw new Error('email, password and type are required');
+    }
+
+    const tableName = type === 'teacher' ? 'teachers' : 'students';
+
+    const result = await db.query(
+      `
+      SELECT *
+      FROM ${tableName}
+      WHERE email = $1
+      LIMIT 1
+      `,
+      [email],
+    );
+
+    if (result.rows.length === 0) {
+      return {
+        ok: false,
+        message: 'User not found',
+      };
+    }
+
+    const user = result.rows[0];
+
+    if (user.password !== password) {
+      return {
+        ok: false,
+        message: 'Invalid password',
+      };
+    }
+
+    return {
+      ok: true,
+      type,
+      user,
+    };
+  }
+
   async createOutput(body: {
     teacherEmail?: string;
     studentEmail?: string;

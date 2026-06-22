@@ -45,6 +45,18 @@ export class AppController {
     return this.appService.createTeacher(body);
   }
 
+  @Post('auth/login')
+  login(
+    @Body()
+    body: {
+      email: string;
+      password: string;
+      type: 'teacher' | 'student';
+    },
+  ) {
+    return this.appService.login(body);
+  }
+
   @Post('outputs')
   createOutput(
     @Body()
