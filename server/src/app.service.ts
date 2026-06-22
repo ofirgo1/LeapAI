@@ -18,20 +18,23 @@ export class AppService {
   async createStudent(body: {
     email: string;
     fullName: string;
+    grade?: string;
     phoneNumber?: string;
     password?: string;
   }) {
-    const { email, fullName, phoneNumber, password } = body;
+    const { email, fullName, grade, phoneNumber, password } = body;
 
     if (!email || !fullName) {
       throw new Error('email and fullName are required');
     }
 
+    await this.ensureEmailIsAvailable(email);
+
     const result = await db.query(
       `
       INSERT INTO students
-      (email, fullname, type, id, phonenumber, password)
-      VALUES ($1, $2, 'student', $3, $4, $5)
+      (email, fullname, type, id, phonenumber, password, grade)
+      VALUES ($1, $2, 'student', $3, $4, $5, $6)
       RETURNING *
       `,
       [
@@ -40,6 +43,7 @@ export class AppService {
         this.createPublicId(),
         phoneNumber || null,
         password || null,
+        grade || null,
       ],
     );
 
@@ -60,6 +64,8 @@ export class AppService {
       throw new Error('email and fullName are required');
     }
 
+    await this.ensureEmailIsAvailable(email);
+
     const result = await db.query(
       `
       INSERT INTO teachers
@@ -78,6 +84,52 @@ export class AppService {
 
     return {
       teacher: result.rows[0],
+    };
+  }
+
+  async login(body: {
+    email: string;
+    password: string;
+    type: 'teacher' | 'student';
+  }) {
+    const { email, password, type } = body;
+
+    if (!email || !password || !type) {
+      throw new Error('email, password and type are required');
+    }
+
+    const tableName = type === 'teacher' ? 'teachers' : 'students';
+
+    const result = await db.query(
+      `
+      SELECT *
+      FROM ${tableName}
+      WHERE email = $1
+      LIMIT 1
+      `,
+      [email],
+    );
+
+    if (result.rows.length === 0) {
+      return {
+        ok: false,
+        message: 'User not found',
+      };
+    }
+
+    const user = result.rows[0];
+
+    if (user.password !== password) {
+      return {
+        ok: false,
+        message: 'Invalid password',
+      };
+    }
+
+    return {
+      ok: true,
+      type,
+      user,
     };
   }
 
@@ -250,6 +302,23 @@ export class AppService {
     return {
       results: result.rows,
     };
+  }
+
+  private async ensureEmailIsAvailable(email: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const result = await db.query(
+      `
+      SELECT email, type FROM students WHERE email = $1
+      UNION
+      SELECT email, type FROM teachers WHERE email = $1
+      `,
+      [normalizedEmail],
+    );
+
+    if (result.rows.length > 0) {
+      throw new Error('Email already exists as a student or teacher');
+    }
   }
 
   private createShareCode() {

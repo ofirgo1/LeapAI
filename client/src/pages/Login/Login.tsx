@@ -11,13 +11,33 @@ import {
     Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { loginRequest } from '../../api/authApi';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
+    const navigate = useNavigate();
+
     const form = useForm({
         initialValues: {
             email: '',
             password: '',
         },
+    });
+
+    const handleSubmit = form.onSubmit(async (values) => {
+        try {
+            const response = await loginRequest(values);
+
+            if (response?.student) {
+                navigate('/student');
+                return;
+            }
+
+            if (response?.teacher) {
+                navigate('/teacher');
+                return;
+            }
+        } catch (error) {}
     });
 
     return (
@@ -76,7 +96,7 @@ const LoginPage = () => {
                             </Text>
                         </Box>
 
-                        <form>
+                        <form onSubmit={handleSubmit}>
                             <Stack>
                                 <TextInput
                                     label="אימייל"

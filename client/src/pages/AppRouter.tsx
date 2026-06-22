@@ -9,7 +9,8 @@ const AppRouter = () => {
                 <Route path="/" element={<div>Home</div>} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signin" element={<SignIn />} />
-                <Route path="/dashboard" element={<div>Dashboard</div>} />
+                <Route path="/student" element={<div>Student Page</div>} />
+                <Route path="/teacher" element={<div>Teacher Page</div>} />
             </Routes>
         </BrowserRouter>
     );

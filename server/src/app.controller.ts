@@ -37,6 +37,7 @@ export class AppController {
     body: {
       email: string;
       fullName: string;
+      id: string;
       phoneNumber?: string;
       password?: string;
     },
