@@ -22,7 +22,7 @@ const AppRouter = () => {
                     path="/teacher/contents/:id"
                     element={<TeacherContentView />}
                 />
-                <Route path="/teacher/Quiz/:id" element={<Quiz />} />
+                <Route path="/teacher/quiz/:id" element={<Quiz />} />
                 <Route
                     path="/teacher/createContent"
                     element={<TeacherCreateContent />}
