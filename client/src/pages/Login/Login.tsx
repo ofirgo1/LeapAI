@@ -3,21 +3,48 @@ import {
     Box,
     Button,
     Container,
+    Group,
     Paper,
     PasswordInput,
+    Radio,
     Stack,
     Text,
     TextInput,
     Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { loginRequest } from '../../api/authApi';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
+    const navigate = useNavigate();
+
     const form = useForm({
         initialValues: {
             email: '',
             password: '',
+            type: 'students',
         },
+        validate: {
+            email: (value) =>
+                /^\S+@\S+\.\S+$/.test(value) ? null : 'אימייל לא תקין',
+
+            password: (value) =>
+                value.length < 6 ? 'סיסמה חייבת להכיל לפחות 6 תווים' : null,
+
+            type: (value) => (value ? null : 'יש לבחור סוג משתמש'),
+        },
+    });
+
+    const handleSubmit = form.onSubmit(async (values) => {
+        try {
+            const response = await loginRequest(values);
+
+            if (response?.type) {
+                navigate(`/${response.type}`);
+                return;
+            }
+        } catch (error) {}
     });
 
     return (
@@ -76,9 +103,10 @@ const LoginPage = () => {
                             </Text>
                         </Box>
 
-                        <form>
+                        <form onSubmit={handleSubmit}>
                             <Stack>
                                 <TextInput
+                                    withAsterisk
                                     label="אימייל"
                                     placeholder="you@example.com"
                                     size="md"
@@ -87,12 +115,25 @@ const LoginPage = () => {
                                 />
 
                                 <PasswordInput
+                                    withAsterisk
                                     label="סיסמה"
                                     placeholder="הסיסמה שלך"
                                     size="md"
                                     radius="md"
                                     {...form.getInputProps('password')}
                                 />
+
+                                <Radio.Group
+                                    label="אני"
+                                    withAsterisk
+                                    size="md"
+                                    {...form.getInputProps('role')}
+                                >
+                                    <Group mt="md">
+                                        <Radio value="students" label="תלמיד" />
+                                        <Radio value="teachers" label="מורה" />
+                                    </Group>
+                                </Radio.Group>
 
                                 <Button
                                     type="submit"

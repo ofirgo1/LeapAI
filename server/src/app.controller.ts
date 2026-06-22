@@ -24,7 +24,6 @@ export class AppController {
     body: {
       email: string;
       fullName: string;
-      grade?: string;
       phoneNumber?: string;
       password?: string;
     },
@@ -38,6 +37,7 @@ export class AppController {
     body: {
       email: string;
       fullName: string;
+      id: string;
       phoneNumber?: string;
       password?: string;
     },
@@ -46,15 +46,21 @@ export class AppController {
   }
 
   @Post('auth/login')
-  login(
+  async login(
     @Body()
     body: {
       email: string;
       password: string;
-      type: 'teacher' | 'student';
+      role: 'teachers' | 'students';
     },
   ) {
-    return this.appService.login(body);
+    const result = await this.appService.login(body);
+
+    if(result.ok) {
+      return result;
+    } else {
+      throw new Error(result.message);
+    }
   }
 
   @Post('outputs')

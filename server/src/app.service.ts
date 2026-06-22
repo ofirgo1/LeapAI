@@ -28,6 +28,8 @@ export class AppService {
       throw new Error('email and fullName are required');
     }
 
+    await this.ensureEmailIsAvailable(email);
+
     const result = await db.query(
       `
       INSERT INTO students
@@ -62,6 +64,8 @@ export class AppService {
       throw new Error('email and fullName are required');
     }
 
+    await this.ensureEmailIsAvailable(email);
+
     const result = await db.query(
       `
       INSERT INTO teachers
@@ -86,20 +90,20 @@ export class AppService {
   async login(body: {
     email: string;
     password: string;
-    type: 'teacher' | 'student';
+    role: 'teachers' | 'students';
   }) {
-    const { email, password, type } = body;
+    const { email, password, role } = body;
 
-    if (!email || !password || !type) {
+    if (!email || !password || !role) {
       throw new Error('email, password and type are required');
     }
 
-    const tableName = type === 'teacher' ? 'teachers' : 'students';
-
+    console.log(role);
+    
     const result = await db.query(
       `
       SELECT *
-      FROM ${tableName}
+      FROM ${role}
       WHERE email = $1
       LIMIT 1
       `,
@@ -115,6 +119,10 @@ export class AppService {
 
     const user = result.rows[0];
 
+    console.log('User found:', user);
+    console.log({password});
+    
+
     if (user.password !== password) {
       return {
         ok: false,
@@ -124,7 +132,7 @@ export class AppService {
 
     return {
       ok: true,
-      type,
+      type: role,
       user,
     };
   }
@@ -298,6 +306,23 @@ export class AppService {
     return {
       results: result.rows,
     };
+  }
+
+  private async ensureEmailIsAvailable(email: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const result = await db.query(
+      `
+      SELECT email, type FROM students WHERE email = $1
+      UNION
+      SELECT email, type FROM teachers WHERE email = $1
+      `,
+      [normalizedEmail],
+    );
+
+    if (result.rows.length > 0) {
+      throw new Error('Email already exists as a student or teacher');
+    }
   }
 
   private createShareCode() {

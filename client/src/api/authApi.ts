@@ -6,6 +6,7 @@ export interface SignInPayload  {
   phoneNumber: string;
   id: string;
   password: string;
+  role: 'students' | 'teachers';
 }
 
 export interface LoginPayload {
@@ -13,11 +14,12 @@ export interface LoginPayload {
   password: string;
 }
 
-export const signInRequest = async (payload: SignInPayload) => {
-  const { data } = await apiClient.post('/auth/signin', payload);
+export const signInRequest = async ({role, ...payload}: SignInPayload) => {
+  const { data } = await apiClient.post(role, payload);
 
   return data;
 };
+
 
 export const loginRequest = async (payload: LoginPayload) => {
   const { data } = await apiClient.post('/auth/login', payload);

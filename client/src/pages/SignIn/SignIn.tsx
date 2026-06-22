@@ -3,23 +3,30 @@ import {
     Box,
     Button,
     Container,
+    Group,
     Paper,
     PasswordInput,
+    Radio,
     Stack,
     Text,
     TextInput,
     Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { SignInPayload, signInRequest } from '../../api/authApi';
+import { useNavigate } from 'react-router-dom';
 
 const SignIn = () => {
-    const form = useForm({
+    const navigate = useNavigate();
+
+    const form = useForm<SignInPayload>({
         initialValues: {
             fullName: '',
             phoneNumber: '',
             email: '',
             id: '',
             password: '',
+            role: 'students',
         },
 
         validate: {
@@ -39,11 +46,25 @@ const SignIn = () => {
 
             id: (value) =>
                 /^\d{9}$/.test(value) ? null : 'תעודת זהות חייבת להכיל 9 ספרות',
+
+            role: (value) => (value ? null : 'יש לבחור סוג משתמש'),
         },
     });
 
-    const handleSubmit = form.onSubmit((values) => {
-        console.log(values);
+    const handleSubmit = form.onSubmit(async (values) => {
+        try {
+            const response = await signInRequest(values);
+
+            if (response?.student) {
+                navigate('/student');
+                return;
+            }
+
+            if (response?.teacher) {
+                navigate('/teacher');
+                return;
+            }
+        } catch (error) {}
     });
 
     return (
@@ -148,6 +169,17 @@ const SignIn = () => {
                                     withAsterisk
                                     {...form.getInputProps('password')}
                                 />
+                                <Radio.Group
+                                    label="אני"
+                                    withAsterisk
+                                    size="md"
+                                    {...form.getInputProps('role')}
+                                >
+                                    <Group mt="md">
+                                        <Radio value="students" label="תלמיד" />
+                                        <Radio value="teachers" label="מורה" />
+                                    </Group>
+                                </Radio.Group>
 
                                 <Button
                                     type="submit"
