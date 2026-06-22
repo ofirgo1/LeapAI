@@ -6,6 +6,8 @@ import Student from './Student/Student';
 import TeacherContents from './TeacherContents/TeacherContents';
 import TeacherContentView from './TeacherContantView/TeacherContantView';
 import TeacherCreateContent from './TeacherCreateContant/TeacherCreateContant';
+import StudentContentView from './Student/StudentContantView/StudentContantView';
+import StudentContents from './Student/StudentsContants/StudentContants';
 
 const AppRouter = () => {
     return (
@@ -15,6 +17,11 @@ const AppRouter = () => {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/student" element={<Student />} />
+                <Route path="/student/contents" element={<StudentContents />} />
+                <Route
+                    path="/student/contents/:id"
+                    element={<StudentContentView />}
+                />
                 <Route path="/teacher" element={<Teacher />} />
                 <Route path="/teacher/contents" element={<TeacherContents />} />
                 <Route

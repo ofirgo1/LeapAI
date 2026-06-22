@@ -7,9 +7,10 @@ import {
     Text,
     Title,
 } from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
 
 const StudentHome = () => {
-    
+    const navigate = useNavigate();
     return (
         <Box dir="rtl" p="xl" bg="#f8fafc" mih="100vh">
             <Stack gap="xl">
@@ -26,7 +27,12 @@ const StudentHome = () => {
                         <Text c="dimmed" mt="sm">
                             צפייה בשיעורים, סיכומים וחומרים שהמורה שיתף.
                         </Text>
-                        <Button mt="md">צפה בתכנים</Button>
+                        <Button mt="md" 
+                                onClick={() =>
+                                            navigate(
+                                                `/student/contents`,
+                                            )}
+                            >צפה בתכנים</Button>
                     </Card>
 
                     <Card shadow="sm" padding="lg" radius="lg" withBorder>
