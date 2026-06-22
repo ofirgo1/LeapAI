@@ -9,6 +9,23 @@ import { generateMockOutput } from './mockAi';
 
 type StudentLevel = 'easy' | 'medium' | 'hard' | 'placement';
 
+type AiQuestion = {
+  question: string;
+  image?: string;
+  wrong_answers: string[];
+  correct_answer: string;
+};
+
+type MaterialContent = AiQuestion[];
+
+type GeneratedMaterial = {
+  subject: string;
+  title: string;
+  grade: string | null;
+  difficulty: number | string;
+  content: MaterialContent;
+};
+
 @Injectable()
 export class AppService {
   async getDbHealth() {
@@ -202,24 +219,50 @@ export class AppService {
 
     const studentProfile = await this.getStudentProfile(studentEmail);
 
+    /*
+      כאן בהמשך נחליף את generateMockOutput בפונקציית AI האמיתית.
+      אבל המבנה הסופי שאנחנו שומרים ב-materials כבר מתאים ל-AI החדש:
+      materials.content = [
+        {
+          question,
+          image,
+          wrong_answers,
+          correct_answer
+        }
+      ]
+    */
+    const generatedMaterial = this.normalizeGeneratedMaterial(
+      generateMockOutput({
+        subject,
+        grade,
+        type,
+        content,
+        studentProfile,
+      }),
+      {
+        subject,
+        grade,
+        difficulty: difficulty || studentProfile.level,
+      },
+    );
+
     const materialResult = await db.query(
       `
-      INSERT INTO materials (subject, grade, difficulty, content)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO materials
+      (subject, title, grade, difficulty, content)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
       `,
-      [subject, grade, difficulty || studentProfile.level, content],
+      [
+        generatedMaterial.subject,
+        generatedMaterial.title,
+        generatedMaterial.grade,
+        String(generatedMaterial.difficulty),
+        JSON.stringify(generatedMaterial.content),
+      ],
     );
 
     const material = materialResult.rows[0];
-
-    const generatedContent = generateMockOutput({
-      subject,
-      grade,
-      type,
-      content,
-      studentProfile,
-    });
 
     const shareCode = this.createShareCode();
 
@@ -233,8 +276,10 @@ export class AppService {
       [
         material.id,
         type,
-        generatedContent.title,
-        JSON.stringify(generatedContent),
+        generatedMaterial.title,
+        JSON.stringify({
+          materialId: material.id,
+        }),
         shareCode,
         teacherEmail || null,
         studentEmail || null,
@@ -248,7 +293,7 @@ export class AppService {
       materialId: material.id,
       shareCode: output.share_code,
       title: output.title,
-      content: output.content_json,
+      material,
       studentProfile,
     };
   }
@@ -256,9 +301,22 @@ export class AppService {
   async getOutputByShareCode(shareCode: string) {
     const result = await db.query(
       `
-      SELECT *
+      SELECT
+        outputs.id AS output_id,
+        outputs.share_code,
+        outputs.type,
+        outputs.teacher_email,
+        outputs.target_student_email,
+        materials.id AS material_id,
+        materials.subject,
+        materials.title,
+        materials.grade,
+        materials.difficulty,
+        materials.content,
+        materials.created_at
       FROM outputs
-      WHERE share_code = $1
+      JOIN materials ON materials.id = outputs.material_id
+      WHERE outputs.share_code = $1
       LIMIT 1
       `,
       [shareCode],
@@ -268,15 +326,24 @@ export class AppService {
       throw new NotFoundException('output not found');
     }
 
-    const output = result.rows[0];
+    const row = result.rows[0];
 
     return {
-      outputId: output.id,
-      materialId: output.material_id,
-      shareCode: output.share_code,
-      title: output.title,
-      type: output.type,
-      content: output.content_json,
+      outputId: row.output_id,
+      materialId: row.material_id,
+      shareCode: row.share_code,
+      type: row.type,
+      teacherEmail: row.teacher_email,
+      studentEmail: row.target_student_email,
+      material: {
+        id: row.material_id,
+        subject: row.subject,
+        title: row.title,
+        grade: row.grade,
+        difficulty: row.difficulty,
+        content: row.content,
+        created_at: row.created_at,
+      },
     };
   }
 
@@ -350,6 +417,89 @@ export class AppService {
     return {
       results: result.rows,
     };
+  }
+
+  private normalizeGeneratedMaterial(
+    rawOutput: any,
+    fallback: {
+      subject: string;
+      grade: string;
+      difficulty: string;
+    },
+  ): GeneratedMaterial {
+    /*
+      אם זה כבר המבנה שה-AI האמיתי מחזיר:
+      {
+        subject,
+        title,
+        grade,
+        difficulty,
+        content: [
+          {
+            question,
+            image,
+            wrong_answers,
+            correct_answer
+          }
+        ]
+      }
+    */
+    if (
+      rawOutput &&
+      rawOutput.subject &&
+      rawOutput.title &&
+      Array.isArray(rawOutput.content)
+    ) {
+      return {
+        subject: rawOutput.subject,
+        title: rawOutput.title,
+        grade: rawOutput.grade === 'NULL' ? null : rawOutput.grade,
+        difficulty: rawOutput.difficulty,
+        content: rawOutput.content,
+      };
+    }
+
+    /*
+      אם כרגע עדיין משתמשים ב-mockAi הישן:
+      {
+        title,
+        summary,
+        questions: [
+          {
+            question,
+            options,
+            correctAnswer,
+            explanation
+          }
+        ]
+      }
+
+      נמיר אותו למבנה החדש של materials.content.
+    */
+    if (rawOutput && rawOutput.title && Array.isArray(rawOutput.questions)) {
+      return {
+        subject: fallback.subject,
+        title: rawOutput.title,
+        grade: fallback.grade,
+        difficulty: fallback.difficulty,
+        content: rawOutput.questions.map((question: any) => {
+          const wrongAnswers = Array.isArray(question.options)
+            ? question.options.filter(
+                (option: string) => option !== question.correctAnswer,
+              )
+            : [];
+
+          return {
+            question: question.question,
+            image: '',
+            wrong_answers: wrongAnswers,
+            correct_answer: question.correctAnswer,
+          };
+        }),
+      };
+    }
+
+    throw new Error('AI output format is not supported');
   }
 
   private async ensureEmailIsAvailable(email: string) {
