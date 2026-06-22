@@ -11,37 +11,29 @@ import {
     Title,
 } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router-dom';
-
-const mockContent = {
-    id: '1',
-    title: 'סיכום לימודי - חוקי ניוטון',
-    subject: 'פיזיקה',
-    grade: 'י',
-    type: 'סיכום לימודי',
-    createdAt: '22/06/2026',
-    content: `
-חוקי ניוטון הם שלושה חוקים בסיסיים המתארים את הקשר בין כוח, מסה ותנועה.
-
-חוק ראשון:
-גוף יתמיד במצבו — במנוחה או בתנועה במהירות קבועה — כל עוד לא פועל עליו כוח חיצוני.
-
-חוק שני:
-הכוח שפועל על גוף שווה למסה שלו כפול התאוצה שלו.
-
-F = m · a
-
-חוק שלישי:
-לכל פעולה יש תגובה שווה בגודלה והפוכה בכיוונה.
-  `,
-};
+import { Content, getContantById } from '../../api/contantApi';
+import { useEffect, useState } from 'react';
 
 export default function TeacherContentView() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [content, setContent] = useState<Content | null>(null);
 
-    console.log(id);
+    useEffect(() => {
+        const fetchContent = async () => {
+            try {
+                const items = await getContantById(id!);
+                console.log(items);
+                setContent(items);
+            } catch (error) {
+                console.error('Error fetching content:', error);
+            }
+        };
 
-    return (
+        fetchContent();
+    }, [id]);
+
+    return content ? (
         <Box dir="rtl" mih="100vh" bg="#f6f7fb" p={{ base: 'md', md: 'xl' }}>
             <Stack gap="xl">
                 <Group justify="space-between">
@@ -74,23 +66,21 @@ export default function TeacherContentView() {
                                 variant="gradient"
                                 gradient={{ from: 'cyan', to: 'violet' }}
                             >
-                                {mockContent.type}
+                                {content.type}
                             </Badge>
 
                             <Badge size="lg" radius="xl" variant="light">
-                                {mockContent.subject}
+                                {content.subject}
                             </Badge>
 
                             <Badge size="lg" radius="xl" variant="light">
-                                כיתה {mockContent.grade}
+                                כיתה {content.grade}
                             </Badge>
                         </Group>
 
-                        <Title order={1}>{mockContent.title}</Title>
+                        <Title order={1}>{content.title}</Title>
 
-                        <Text c="dimmed">
-                            נוצר בתאריך {mockContent.createdAt}
-                        </Text>
+                        <Text c="dimmed">נוצר בתאריך {content.createdAt}</Text>
                     </Stack>
                 </Paper>
 
@@ -118,11 +108,15 @@ export default function TeacherContentView() {
                                 fontSize: '1.05rem',
                             }}
                         >
-                            {mockContent.content}
+                            {content.content}
                         </Text>
                     </Stack>
                 </Card>
             </Stack>
+        </Box>
+    ) : (
+        <Box dir="rtl" mih="100vh" bg="#f6f7fb" p="xl">
+            <Text>טוען תוכן...</Text>
         </Box>
     );
 }
