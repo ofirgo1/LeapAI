@@ -2,7 +2,6 @@ import {
     Badge,
     Box,
     Button,
-    Checkbox,
     Divider,
     FileInput,
     Group,
