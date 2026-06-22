@@ -30,3 +30,20 @@ export const getContants = async () => {
 
     return data?.materials;
 }
+
+export type CreateContentPayload = {
+  type: string;
+  title: string;
+  grade: string;
+  content: {
+    subject: string;
+    difficulty: string;
+    prompt: string;
+    fileName: string | null;
+  };
+};
+
+export const createContent = async (payload: CreateContentPayload) => {
+  const { data } = await apiClient.post('/materials', payload);
+  return data;
+};

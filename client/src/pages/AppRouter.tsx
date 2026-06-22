@@ -6,6 +6,7 @@ import Student from './Student/Student';
 import TeacherContents from './TeacherContents/TeacherContents';
 import TeacherContentView from './TeacherContantView/TeacherContantView';
 import TeacherCreateContent from './TeacherCreateContant/TeacherCreateContant';
+import Quiz from './Quiz/Quiz';
 
 const AppRouter = () => {
     return (
@@ -21,6 +22,7 @@ const AppRouter = () => {
                     path="/teacher/contents/:id"
                     element={<TeacherContentView />}
                 />
+                <Route path="/teacher/Quiz/:id" element={<Quiz />} />
                 <Route
                     path="/teacher/createContent"
                     element={<TeacherCreateContent />}
