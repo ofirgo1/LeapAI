@@ -12,11 +12,11 @@ const AppRouter = () => {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<div>Home</div>} />
+                <Route path="/" element={<LoginPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/student" element={<Student />} />
-                <Route path="/teacher" element={<Teacher />} />
+                <Route path="/teacher" element={<TeacherContents />} />
                 <Route path="/teacher/contents" element={<TeacherContents />} />
                 <Route
                     path="/teacher/contents/:id"
