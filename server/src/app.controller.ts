@@ -24,7 +24,6 @@ export class AppController {
     body: {
       email: string;
       fullName: string;
-      grade?: string;
       phoneNumber?: string;
       password?: string;
     },

@@ -18,11 +18,10 @@ export class AppService {
   async createStudent(body: {
     email: string;
     fullName: string;
-    grade?: string;
     phoneNumber?: string;
     password?: string;
   }) {
-    const { email, fullName, grade, phoneNumber, password } = body;
+    const { email, fullName, phoneNumber, password } = body;
 
     if (!email || !fullName) {
       throw new Error('email and fullName are required');
@@ -31,8 +30,8 @@ export class AppService {
     const result = await db.query(
       `
       INSERT INTO students
-      (email, fullname, type, id, phonenumber, password, grade)
-      VALUES ($1, $2, 'student', $3, $4, $5, $6)
+      (email, fullname, type, id, phonenumber, password)
+      VALUES ($1, $2, 'student', $3, $4, $5)
       RETURNING *
       `,
       [
@@ -41,7 +40,6 @@ export class AppService {
         this.createPublicId(),
         phoneNumber || null,
         password || null,
-        grade || null,
       ],
     );
 
