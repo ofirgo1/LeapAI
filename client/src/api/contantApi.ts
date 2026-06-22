@@ -44,6 +44,6 @@ export type CreateContentPayload = {
 };
 
 export const createContent = async (payload: CreateContentPayload) => {
-  const { data } = await apiClient.post('/outputs', payload);
+  const { data } = await apiClient.post('/materials', payload);
   return data;
 };
