@@ -3,8 +3,10 @@ import {
     Box,
     Button,
     Container,
+    Group,
     Paper,
     PasswordInput,
+    Radio,
     Stack,
     Text,
     TextInput,
@@ -21,6 +23,16 @@ const LoginPage = () => {
         initialValues: {
             email: '',
             password: '',
+            type: 'students',
+        },
+        validate: {
+            email: (value) =>
+                /^\S+@\S+\.\S+$/.test(value) ? null : 'אימייל לא תקין',
+
+            password: (value) =>
+                value.length < 6 ? 'סיסמה חייבת להכיל לפחות 6 תווים' : null,
+
+            type: (value) => (value ? null : 'יש לבחור סוג משתמש'),
         },
     });
 
@@ -28,13 +40,8 @@ const LoginPage = () => {
         try {
             const response = await loginRequest(values);
 
-            if (response?.student) {
-                navigate('/student');
-                return;
-            }
-
-            if (response?.teacher) {
-                navigate('/teacher');
+            if (response?.type) {
+                navigate(`/${response.type}`);
                 return;
             }
         } catch (error) {}
@@ -99,6 +106,7 @@ const LoginPage = () => {
                         <form onSubmit={handleSubmit}>
                             <Stack>
                                 <TextInput
+                                    withAsterisk
                                     label="אימייל"
                                     placeholder="you@example.com"
                                     size="md"
@@ -107,12 +115,25 @@ const LoginPage = () => {
                                 />
 
                                 <PasswordInput
+                                    withAsterisk
                                     label="סיסמה"
                                     placeholder="הסיסמה שלך"
                                     size="md"
                                     radius="md"
                                     {...form.getInputProps('password')}
                                 />
+
+                                <Radio.Group
+                                    label="אני"
+                                    withAsterisk
+                                    size="md"
+                                    {...form.getInputProps('role')}
+                                >
+                                    <Group mt="md">
+                                        <Radio value="students" label="תלמיד" />
+                                        <Radio value="teachers" label="מורה" />
+                                    </Group>
+                                </Radio.Group>
 
                                 <Button
                                     type="submit"
