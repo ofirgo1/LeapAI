@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { db } from './db';
 import { generateMockOutput } from './mockAi';
 
@@ -15,6 +20,40 @@ export class AppService {
     };
   }
 
+  async getMaterials() {
+    const result = await db.query(
+      `
+      SELECT *
+      FROM materials
+      ORDER BY created_at DESC
+      `,
+    );
+
+    return {
+      materials: result.rows,
+    };
+  }
+
+  async getMaterialById(id: string) {
+    const result = await db.query(
+      `
+      SELECT *
+      FROM materials
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [id],
+    );
+
+    if (result.rows.length === 0) {
+      throw new NotFoundException('material not found');
+    }
+
+    return {
+      material: result.rows[0],
+    };
+  }
+
   async createStudent(body: {
     email: string;
     fullName: string;
@@ -24,11 +63,13 @@ export class AppService {
   }) {
     const { email, fullName, grade, phoneNumber, password } = body;
 
-    if (!email || !fullName) {
-      throw new Error('email and fullName are required');
+    if (!email || !fullName || !password) {
+      throw new BadRequestException('email, fullName and password are required');
     }
 
-    await this.ensureEmailIsAvailable(email);
+    const normalizedEmail = email.trim().toLowerCase();
+
+    await this.ensureEmailIsAvailable(normalizedEmail);
 
     const result = await db.query(
       `
@@ -38,11 +79,11 @@ export class AppService {
       RETURNING *
       `,
       [
-        email,
+        normalizedEmail,
         fullName,
         this.createPublicId(),
         phoneNumber || null,
-        password || null,
+        password,
         grade || null,
       ],
     );
@@ -60,11 +101,13 @@ export class AppService {
   }) {
     const { email, fullName, phoneNumber, password } = body;
 
-    if (!email || !fullName) {
-      throw new Error('email and fullName are required');
+    if (!email || !fullName || !password) {
+      throw new BadRequestException('email, fullName and password are required');
     }
 
-    await this.ensureEmailIsAvailable(email);
+    const normalizedEmail = email.trim().toLowerCase();
+
+    await this.ensureEmailIsAvailable(normalizedEmail);
 
     const result = await db.query(
       `
@@ -74,11 +117,11 @@ export class AppService {
       RETURNING *
       `,
       [
-        email,
+        normalizedEmail,
         fullName,
         this.createPublicId(),
         phoneNumber || null,
-        password || null,
+        password,
       ],
     );
 
@@ -95,11 +138,15 @@ export class AppService {
     const { email, password, role } = body;
 
     if (!email || !password || !role) {
-      throw new Error('email, password and type are required');
+      throw new BadRequestException('email, password and role are required');
     }
 
-    console.log(role);
-    
+    if (role !== 'teachers' && role !== 'students') {
+      throw new BadRequestException('role must be teachers or students');
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
     const result = await db.query(
       `
       SELECT *
@@ -107,31 +154,22 @@ export class AppService {
       WHERE email = $1
       LIMIT 1
       `,
-      [email],
+      [normalizedEmail],
     );
 
     if (result.rows.length === 0) {
-      return {
-        ok: false,
-        message: 'User not found',
-      };
+      throw new UnauthorizedException('Invalid email or password');
     }
 
     const user = result.rows[0];
 
-    console.log('User found:', user);
-    console.log({password});
-    
-
     if (user.password !== password) {
-      return {
-        ok: false,
-        message: 'Invalid password',
-      };
+      throw new UnauthorizedException('Invalid email or password');
     }
 
     return {
       ok: true,
+      role,
       type: role,
       user,
     };
@@ -157,7 +195,9 @@ export class AppService {
     } = body;
 
     if (!subject || !grade || !type || !content) {
-      throw new Error('subject, grade, type and content are required');
+      throw new BadRequestException(
+        'subject, grade, type and content are required',
+      );
     }
 
     const studentProfile = await this.getStudentProfile(studentEmail);
@@ -205,6 +245,7 @@ export class AppService {
 
     return {
       outputId: output.id,
+      materialId: material.id,
       shareCode: output.share_code,
       title: output.title,
       content: output.content_json,
@@ -231,6 +272,7 @@ export class AppService {
 
     return {
       outputId: output.id,
+      materialId: output.material_id,
       shareCode: output.share_code,
       title: output.title,
       type: output.type,
@@ -248,7 +290,9 @@ export class AppService {
     const { outputId, studentEmail, studentName, score, answers } = body;
 
     if (!outputId || !studentName || typeof score !== 'number') {
-      throw new Error('outputId, studentName and score are required');
+      throw new BadRequestException(
+        'outputId, studentName and score are required',
+      );
     }
 
     const result = await db.query(
@@ -282,7 +326,7 @@ export class AppService {
         SET current_level = $1
         WHERE email = $2
         `,
-        [newLevel, studentEmail],
+        [newLevel, studentEmail.trim().toLowerCase()],
       );
     }
 
@@ -321,7 +365,9 @@ export class AppService {
     );
 
     if (result.rows.length > 0) {
-      throw new Error('Email already exists as a student or teacher');
+      throw new BadRequestException(
+        'Email already exists as a student or teacher',
+      );
     }
   }
 
@@ -341,6 +387,8 @@ export class AppService {
       };
     }
 
+    const normalizedEmail = studentEmail.trim().toLowerCase();
+
     const studentResult = await db.query(
       `
       SELECT current_level
@@ -348,7 +396,7 @@ export class AppService {
       WHERE email = $1
       LIMIT 1
       `,
-      [studentEmail],
+      [normalizedEmail],
     );
 
     if (studentResult.rows.length === 0) {
@@ -366,7 +414,7 @@ export class AppService {
       ORDER BY created_at DESC
       LIMIT 5
       `,
-      [studentEmail],
+      [normalizedEmail],
     );
 
     if (results.rows.length === 0) {
