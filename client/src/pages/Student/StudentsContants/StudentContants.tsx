@@ -79,7 +79,7 @@ export default function StudentContents() {
     }
 
     // ---------------- UI ----------------
-    return (
+    return ( items.length === 0 ? ( <Text c="dimmed">אין עדיין חומרי לימוד זמינים.</Text> ) :
         <Box dir="rtl" mih="100vh" bg="#f6f7fb" p="xl">
             <Stack gap="xl">
                 {/* HEADER FILTERS */}

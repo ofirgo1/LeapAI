@@ -16,6 +16,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Content, getContantById } from '../../../api/contantApi';
+import { setResults } from '../../../api/resultsApi';
 
 interface QuizQuestion {
     image: string;
@@ -43,6 +44,8 @@ export default function Quiz() {
     const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
     const [score, setScore] = useState(0);
 
+    const [submitting, setSubmitting] = useState(false);
+
     const questions: QuizQuestion[] =
         Array.isArray(content?.content) ? content.content : [];
     const question = questions[current];
@@ -58,19 +61,6 @@ export default function Quiz() {
                 console.error('Error fetching content:', error);
             } finally {
                 setLoading(false);
-            }
-        };
-
-        fetchContent();
-    }, [id]);
-
-    useEffect(() => {
-        const fetchContent = async () => {
-            try {
-                const item = await getContantById(id!);
-                setContent(item);
-            } catch (error) {
-                console.error('Error fetching content:', error);
             }
         };
 
@@ -115,6 +105,7 @@ export default function Quiz() {
 
     const finished =
         !loading &&
+        content !== null &&
         questions.length > 0 &&
         current >= questions.length;
 
@@ -131,6 +122,25 @@ export default function Quiz() {
         return 'gray';
     };
 
+    const handleSubmitResults = async () => {
+        try {
+            setSubmitting(true);
+
+            await setResults({
+                outputId: id!,
+                studentName: localStorage.getItem('user') ?? 'Unknown', 
+                score,
+                answers: userAnswers,
+            });
+
+            navigate('/student/contents');
+        } catch (error) {
+            console.error('Failed to submit results:', error);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     // ---------------- REVIEW SCREEN ----------------
     if (finished) {
         return (
@@ -142,11 +152,18 @@ export default function Quiz() {
                         ניקוד: {score} / {questions.length}
                     </Text>
 
-                    <Button
-                        onClick={() => navigate('/student/contents')}
-                    >
-                        חזרה לתכנים
-                    </Button>
+                    <Group>
+                        <Button onClick={() => navigate('/student/contents')}>
+                            חזרה לתכנים
+                        </Button>
+
+                        <Button
+                            loading={submitting}
+                            onClick={handleSubmitResults}
+                        >
+                            שלח תוצאות
+                        </Button>
+                    </Group>
 
                     <Divider />
 
