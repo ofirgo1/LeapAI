@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { db } from './db';
-import { CreateContentPayload, generateQuizFromAi } from './aiClient';
+import { CreateContentPayload, generateQuizFromAi, generateSummaryFromAi } from './aiClient';
 
 type StudentLevel = 'easy' | 'medium' | 'hard' | 'placement';
 
@@ -73,13 +73,18 @@ export class AppService {
     let aiResult;
 
     try {
-      aiResult = await generateQuizFromAi(body);
+      if(body.type == 'quiz') {
+        aiResult = await generateQuizFromAi(body);
+      } else if(body.type == 'summary') {
+        aiResult = await generateSummaryFromAi(body);
+      } else {
+        throw new Error("Material type not implemented");
+      }
     } catch (error) {
       throw new BadGatewayException(
         error instanceof Error ? error.message : 'AI service failed',
       );
     }
-
     const materialResult = await db.query(
       `
       INSERT INTO materials
@@ -91,17 +96,16 @@ export class AppService {
         aiResult.subject,
         aiResult.title,
         body.grade,
-        String(aiResult.difficulty),
+        String(aiResult.difficulty || '0'),
         JSON.stringify(aiResult.content),
         body.content.prompt,
         body.content.fileName || null,
         body.type,
       ],
     );
-
     const material = materialResult.rows[0];
 
-    const shareCode = this.createShareCode();
+    /*const shareCode = this.createShareCode();
 
     const outputResult = await db.query(
       `
@@ -123,14 +127,14 @@ export class AppService {
       ],
     );
 
-    const output = outputResult.rows[0];
+    const output = outputResult.rows[0];*/
 
     return {
       material,
-      outputId: output.id,
+      outputId: '0',
       materialId: material.id,
-      shareCode: output.share_code,
-      title: output.title,
+      shareCode: '0',
+      title: aiResult.title,
     };
   }
 

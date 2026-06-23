@@ -26,6 +26,13 @@ export type AiQuizResult = {
   content: AiQuestion[];
 };
 
+
+export type AiSummaryResult = {
+  subject: string;
+  title: string;
+  content: string;
+};
+
 export async function generateQuizFromAi(
   payload: CreateContentPayload,
 ): Promise<AiQuizResult> {
@@ -55,6 +62,39 @@ export async function generateQuizFromAi(
   const data = (await response.json()) as AiQuizResult;
 
   if (!data.subject || !data.title || !Array.isArray(data.content)) {
+    throw new Error('AI response structure is invalid');
+  }
+
+  return data;
+}
+
+export async function generateSummaryFromAi(
+  payload: CreateContentPayload,
+): Promise<AiSummaryResult> {
+  const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+
+  const topic = `${payload.title}\n${payload.content.prompt}`;
+
+  const response = await fetch(`${aiServiceUrl}/generate_summary`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      subject: payload.content.subject,
+      topic,
+      lang: 'Hebrew',
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`AI service error: ${errorText}`);
+  }
+
+  const data = (await response.json()) as AiSummaryResult;
+
+  if (!data.subject || !data.title || !data.content) {
     throw new Error('AI response structure is invalid');
   }
 

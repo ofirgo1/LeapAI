@@ -13,6 +13,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { Content, getContantById } from '../../api/contantApi';
 import { useEffect, useState } from 'react';
+import Markdown from 'react-markdown';
 
 export default function TeacherContentView() {
     const { id } = useParams();
@@ -101,15 +102,26 @@ export default function TeacherContentView() {
 
                         <Divider />
 
-                        <Text
-                            style={{
-                                whiteSpace: 'pre-line',
-                                lineHeight: 1.9,
-                                fontSize: '1.05rem',
+                        {/* We map the standard paragraph output to Mantine's <Text> component
+                          to safely retain your structural typography styling.
+                        */}
+                        <Markdown
+                            components={{
+                                p: ({ children }) => (
+                                    <Text
+                                        style={{
+                                            lineHeight: 1.9,
+                                            fontSize: '1.05rem',
+                                            marginBottom: '1rem',
+                                        }}
+                                    >
+                                        {children}
+                                    </Text>
+                                ),
                             }}
                         >
                             {content.content}
-                        </Text>
+                        </Markdown>
                     </Stack>
                 </Card>
             </Stack>
