@@ -1,3 +1,4 @@
+// client/src/pages/Login/Login.tsx
 import {
     Anchor,
     Box,
@@ -40,11 +41,21 @@ const LoginPage = () => {
         try {
             const response = await loginRequest(values);
 
+            // Save user details to localStorage before redirecting
+            if (response?.user) {
+                localStorage.setItem('user', JSON.stringify({
+                    // Backend returns 'fullname' from the database query mapping
+                    name: response.user.fullname || response.user.fullName || 'תלמיד'
+                }));
+            }
+
             if (response?.type) {
-                navigate(`/${response.type}`);
+                navigate(`/${response.type == 'students' ? 'student' : 'teacher'}`);
                 return;
             }
-        } catch (error) {}
+        } catch (error) {
+            console.error('Login error:', error);
+        }
     });
 
     return (
