@@ -125,11 +125,14 @@ export default function Quiz() {
     const handleSubmitResults = async () => {
         try {
             setSubmitting(true);
+console.log('Submitting results...', JSON.parse(localStorage.getItem('user') || '{}'),
+);
 
             await setResults({
                 outputId: id!,
-                studentName: localStorage.getItem('user') ?? 'Unknown', 
-                score,
+                studentName: JSON.parse(localStorage.getItem('user') || '{}').name || 'Unknown',
+                studentEmail: JSON.parse(localStorage.getItem('user') || '{}').email || 'Unknown',
+                score: (Math.round((score / questions.length) * 100)),
                 answers: userAnswers,
             });
 

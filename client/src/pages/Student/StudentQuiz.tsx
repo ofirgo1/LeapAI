@@ -79,8 +79,8 @@ export default function StudentQuiz() {
             // Match backend expectations from AppController Post('results')
             await apiClient.post('/results', {
                 outputId: id, // Mapping material ID as the POC target identifier
-                studentName: 'תלמיד POC', 
-                studentEmail: 'student@leapai.com', // Replace with dynamic auth if available
+                studentName: JSON.parse(localStorage.getItem('user') || '{}').name || 'Unknown',
+                studentEmail: JSON.parse(localStorage.getItem('user') || '{}').email || 'Unknown',
                 score: calculatedScore,
                 answers: answersPayload,
             });
