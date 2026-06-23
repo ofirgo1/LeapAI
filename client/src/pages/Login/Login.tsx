@@ -40,12 +40,13 @@ const LoginPage = () => {
     const handleSubmit = form.onSubmit(async (values) => {
         try {
             const response = await loginRequest(values);
-
+            console.log('Login successful:', response);
             // Save user details to localStorage before redirecting
             if (response?.user) {
                 localStorage.setItem('user', JSON.stringify({
                     // Backend returns 'fullname' from the database query mapping
-                    name: response.user.fullname || response.user.fullName || 'תלמיד'
+                    name: response.user.fullname || response.user.fullName || 'תלמיד',
+                    email: response.user.email || '',
                 }));
             }
 

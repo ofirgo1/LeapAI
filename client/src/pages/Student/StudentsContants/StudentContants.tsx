@@ -110,6 +110,7 @@ export default function StudentContents() {
                             { label: 'הכל', value: 'all' },
                             { label: 'סיכום', value: 'summary' },
                             { label: 'בוחן', value: 'quiz' },
+                            { label: 'מבחן', value: 'test' },
                         ]}
                     />
                 </Group>
@@ -127,7 +128,7 @@ export default function StudentContents() {
                             <Stack gap="md">
                                 <Group justify="space-between">
                                     <Badge variant="light" radius="xl">
-                                        {item.type}
+                                        {item.type === 'quiz' ? 'בוחן / תרגול' : item.type === 'summary' ? 'סיכום שיעור' : 'מבחן'}
                                     </Badge>
 
                                     <Text size="sm" c="dimmed">
@@ -155,7 +156,7 @@ export default function StudentContents() {
                                             setTypeFilter(item.type)
                                         }
                                     >
-                                        {item.type}
+                                        {item.type === 'quiz' ? 'בוחן / תרגול' : item.type === 'summary' ? 'סיכום שיעור' : 'מבחן'}
                                     </Badge>
 
                                     <Badge variant="outline">

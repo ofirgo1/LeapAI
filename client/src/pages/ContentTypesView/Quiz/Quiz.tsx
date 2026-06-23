@@ -125,11 +125,14 @@ export default function Quiz() {
     const handleSubmitResults = async () => {
         try {
             setSubmitting(true);
+console.log('Submitting results...', JSON.parse(localStorage.getItem('user') || '{}'),
+);
 
             await setResults({
                 outputId: id!,
-                studentName: localStorage.getItem('user') ?? 'Unknown', 
-                score,
+                studentName: JSON.parse(localStorage.getItem('user') || '{}').name || 'Unknown',
+                studentEmail: JSON.parse(localStorage.getItem('user') || '{}').email || 'Unknown',
+                score: (Math.round((score / questions.length) * 100)),
                 answers: userAnswers,
             });
 
@@ -146,7 +149,7 @@ export default function Quiz() {
         return (
             <Box dir="rtl" mih="100vh" bg="#f6f7fb" p="xl">
                 <Stack gap="xl">
-                    <Title order={1}>סיימת את המבחן 🎉</Title>
+                    <Title order={1}>סיימת את הבוחן 🎉</Title>
 
                     <Text size="lg">
                         ניקוד: {score} / {questions.length}
