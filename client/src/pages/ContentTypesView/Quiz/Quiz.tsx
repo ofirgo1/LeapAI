@@ -146,7 +146,7 @@ export default function Quiz() {
         return (
             <Box dir="rtl" mih="100vh" bg="#f6f7fb" p="xl">
                 <Stack gap="xl">
-                    <Title order={1}>סיימת את המבחן 🎉</Title>
+                    <Title order={1}>סיימת את הבוחן 🎉</Title>
 
                     <Text size="lg">
                         ניקוד: {score} / {questions.length}
