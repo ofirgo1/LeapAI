@@ -2,11 +2,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './Login/Login';
 import SignIn from './SignIn/SignIn';
-import Teacher from './Teacher/Teacher';
 import Student from './Student/Student';
 import TeacherContents from './TeacherContents/TeacherContents';
 import TeacherContentView from './TeacherContantView/TeacherContantView';
 import TeacherCreateContent from './TeacherCreateContant/TeacherCreateContant';
+
+import StudentContentView from './Student/StudentContantView/StudentContantView';
+import StudentContents from './Student/StudentsContants/StudentContants';
 import Quiz from './Quiz/Quiz';
 import StudentQuiz from './Student/StudentQuiz'; // <-- Import the new view
 
@@ -17,7 +19,12 @@ const AppRouter = () => {
                 <Route path="/" element={<LoginPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signin" element={<SignIn />} />
-                <Route path="/student" element={<Student />} />
+                <Route path="/student" element={<StudentContents />} />
+                <Route path="/student/contents" element={<StudentContents />} />
+                <Route
+                    path="/student/contents/:id"
+                    element={<StudentContentView />}
+                />
                 <Route path="/student/quiz/:id" element={<StudentQuiz />} />
                 <Route path="/teacher" element={<TeacherContents />} />
                 <Route path="/teacher/contents" element={<TeacherContents />} />
