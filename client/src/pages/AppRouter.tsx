@@ -1,3 +1,4 @@
+// client/src/pages/AppRouter.tsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './Login/Login';
 import SignIn from './SignIn/SignIn';
@@ -7,6 +8,7 @@ import TeacherContents from './TeacherContents/TeacherContents';
 import TeacherContentView from './TeacherContantView/TeacherContantView';
 import TeacherCreateContent from './TeacherCreateContant/TeacherCreateContant';
 import Quiz from './Quiz/Quiz';
+import StudentQuiz from './Student/StudentQuiz'; // <-- Import the new view
 
 const AppRouter = () => {
     return (
@@ -16,6 +18,7 @@ const AppRouter = () => {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/student" element={<Student />} />
+                <Route path="/student/quiz/:id" element={<StudentQuiz />} />
                 <Route path="/teacher" element={<TeacherContents />} />
                 <Route path="/teacher/contents" element={<TeacherContents />} />
                 <Route
