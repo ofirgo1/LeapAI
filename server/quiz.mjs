@@ -77,6 +77,18 @@ Rules:
   return JSON.parse(response.text);
 }
 
+async function generateSummary(topic, subject, lang) {
+const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: `
+    Generate a summary on ${subject} in ${lang}.
+    Topic:
+    ${topic}.
+    Your response should contain the summary ONLY, and no other prefix or suffix.`
+  });
+  return response.text;
+}
+
 
 
 export async function generateQuiz(
@@ -104,7 +116,7 @@ export async function generateQuiz(
       .map((q) => ({
         question: q.question,
         wrong_answers: q.wrong_answers,
-        correct_answer: q.correct_answe,
+        correct_answer: q.correct_answer,
       })),
   };
 }
@@ -141,6 +153,37 @@ app.post('/generate_quiz', async (req, res) => {
     });
   }
 });
+
+app.post('/generate_summary', async (req, res) => {
+  try {
+    const { subject, topic, lang } = req.body;
+    if (!subject || !topic) {
+      return res.status(400).json({
+        error: 'Missing required fields: subject or topic.',
+      });
+    }
+
+    console.log(
+      `[+] Received request to generate a summary on: ${topic} (${subject})`,
+    );
+
+    const summaryResult = await generateSummary(
+      subject,
+      topic,
+      lang || 'Hebrew',
+    );
+    console.log('[+] Done! returning result');
+    return res.status(200).json({'subject':subject, 'title': subject, 'content': summaryResult});
+  } catch (error) {
+    console.error('[-] Error generating summary inside endpoint:', error);
+
+    return res.status(500).json({
+      error: 'An internal server error occurred while generating the summary.',
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`[+] Quiz generation API running on http://localhost:${PORT}`);
