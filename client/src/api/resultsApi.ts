@@ -10,6 +10,10 @@ export interface ResultPayload {
 
 export const setResults = async (payload : ResultPayload) => {
     const { data } = await apiClient.post('/results', payload);
+    return data;
+}
 
+export const getResultsOfQuiz = async (outputId: string) => {
+    const { data } = await apiClient.get(`/results/${outputId}`);
     return data;
 }

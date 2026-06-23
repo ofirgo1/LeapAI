@@ -62,20 +62,6 @@ const StudentHome = () => {
                     </Text>
                 </Box>
 
-
-                {/* <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
-                    <Card shadow="sm" padding="lg" radius="lg" withBorder>
-                        <Title order={3}>תכני לימוד</Title>
-                        <Text c="dimmed" mt="sm">
-                            צפייה בשיעורים, סיכומים וחומרים שהמורה שיתף.
-                        </Text>
-                        <Button mt="md" 
-                                onClick={() =>
-                                            navigate(
-                                                `/student/contents`,
-                                            )}
-                            >צפה בתכנים</Button>
-                    </Card> */}
                 <Title order={2}>חומרי הלימוד והמשימות שלי</Title>
                 
                 {loading ? (

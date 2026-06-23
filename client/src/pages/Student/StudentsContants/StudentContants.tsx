@@ -15,14 +15,19 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Content, getContants } from '../../../api/contantApi';
+import { getResultsOfQuiz } from '../../../api/resultsApi';
 
 export default function StudentContents() {
     const [tab, setTab] = useState('materials');
     const [items, setItems] = useState<Content[]>([]);
+    const [results, setResults] = useState<string[]>([]);
+
     const [loading, setLoading] = useState(true);
 
     const [search, setSearch] = useState('');
     const [typeFilter, setTypeFilter] = useState<string | null>(null);
+
+    const userEmail = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).email : null;
 
     const navigate = useNavigate();
 
@@ -31,7 +36,28 @@ export default function StudentContents() {
             try {
                 setLoading(true);
                 const contants = await getContants();
+                const results = (
+                    await Promise.all(
+                        contants.map(async (item: Content) => {
+                            if (item.type !== 'quiz' && item.type !== 'test') {
+                                return null;
+                            }
+
+                            const res = await getResultsOfQuiz(item.id);
+
+                            const userRecord = res?.results?.find(
+                                (record: { student_email: string }) =>
+                                    record.student_email === userEmail,
+                            );
+
+                            return userRecord ? item.id : null;
+                        }),
+                    )
+                ).filter(Boolean) as string[];
+    
                 setItems(contants);
+                setResults(results);
+                
             } catch (error) {
                 console.error('Error fetching content:', error);
             } finally {
@@ -126,11 +152,15 @@ export default function StudentContents() {
                             withBorder
                         >
                             <Stack gap="md">
-                                <Group justify="space-between">
+                                <Group gap="xs">
                                     <Badge variant="light" radius="xl">
                                         {item.type === 'quiz' ? 'בוחן / תרגול' : item.type === 'summary' ? 'סיכום שיעור' : 'מבחן'}
                                     </Badge>
-
+                                    {item.type === 'quiz' || item.type === 'test' ? (
+                                        <Badge variant="filled" radius="xl" color={results.includes(item.id) ? 'green' : 'red'}>
+                                            {results.includes(item.id) ? 'הוגש' : 'טרם הוגש'}
+                                        </Badge>
+                                    ) : null}
                                     <Text size="sm" c="dimmed">
                                         {item.createdAt}
                                     </Text>
