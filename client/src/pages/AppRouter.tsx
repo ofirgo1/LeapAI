@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './Login/Login';
 import SignIn from './SignIn/SignIn';
-import Teacher from './Teacher/Teacher';
 import Student from './Student/Student';
 import TeacherContents from './TeacherContents/TeacherContents';
 import TeacherContentView from './TeacherContantView/TeacherContantView';
@@ -24,7 +23,7 @@ const AppRouter = () => {
                     path="/student/contents/:id"
                     element={<StudentContentView />}
                 />
-                <Route path="/teacher" element={<Teacher />} />
+                <Route path="/teacher" element={<TeacherContents />} />
                 <Route path="/teacher/contents" element={<TeacherContents />} />
                 <Route
                     path="/teacher/contents/:id"
